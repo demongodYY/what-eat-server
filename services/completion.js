@@ -31,7 +31,6 @@ const recommendEat = async (eatList, historyMessages) => {
       {
         reason: 推荐的理由
         name: 餐馆的名字
-        id: 餐馆的 id,
       }
       注意，只输出 JSON 格式，不要包含其他信息。
       `
@@ -65,7 +64,7 @@ const getPromptQuestion = async (eatList, historyMessages) => {
 // 云函数入口函数
 const getRecommendRestaurant = async (eatList = [], history = []) => {
   const restaurantInfo = eatList.map(({ title, id, category }) => {
-    return { id, title, category };
+    return { title, category };
   });
   const historyMessages = history.map((msg) => {
     return msg.role === 'AI'
