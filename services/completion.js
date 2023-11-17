@@ -23,15 +23,17 @@ const completion = async (
 const recommendEat = async (eatList, historyMessages) => {
   const messages = [
     new SystemMessage(
-      `你是一个美食助手，请根据我提供的餐馆列表上下文，根据我提供的喜好, 来帮助我挑选一家餐馆。
-      餐馆列表上下文会被引用在 ''' 之中
-      餐馆列表上下文：'''${JSON.stringify(eatList)}'''
+      `你是一个美食助手，请根据我提供的餐馆列表上下文，以及对话上下文，来帮助我挑选一家餐馆。
+      餐馆列表上下文会被引用在 ''' 之中。餐馆列表上下文：'''${JSON.stringify(
+        eatList
+      )}'''
       请只推荐符合要求的一家，并用以下 JSON 格式进行输出：
       {
         reason: 推荐的理由
         name: 餐馆的名字
         id: 餐馆的 id,
       }
+      注意，只输出 JSON 格式，不要包含其他信息。
       `
     ),
     ...historyMessages,
@@ -44,14 +46,13 @@ const getPromptQuestion = async (eatList, historyMessages) => {
   console.log('enter get prompt question');
   const messages = [
     new SystemMessage(
-      `你是一个美食助手，你将通过向用户连续提问的方式来识别用户的需求
+      `你是一个美食助手，你将通过向用户连续提问的方式来识别用户的需求。
       请结合餐馆列表上下文和历史提问来提出下一个问题，这个问题将帮助我从餐馆列表中选择出一家我最想去的餐馆。
-      问题需要和口味相关，比如“您喜欢吃辣吗”或者“你喜欢鸡肉吗”或者“你喜欢火锅吗”
-      不要提供和口味无关的问题，比如“您是否需要早餐店提供电话预定服务？”和“您是否对早餐店的环境有特别的要求，比如需要安静的环境，或者喜欢热闹的氛围？”等等
-      餐馆列表上下文会被引用在 ''' 之中。
-      餐馆列表上下文：'''${JSON.stringify(eatList)}'''
-      请每次都问更详细的问题,不要重复类似的问题
-      如果没有新问题了，请返回“我没有新问题了”
+      餐馆列表上下文会被引用在 ''' 之中。餐馆列表上下文：'''${JSON.stringify(
+        eatList
+      )}'''
+
+      请每次都问更详细的问题,不要重复类似的问题，问题需要和口味相关，并且非常简洁。不要提供和口味无关的问题。
     `
     ),
     ...historyMessages,
