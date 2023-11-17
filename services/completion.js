@@ -7,7 +7,7 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const completion = async (
   messages,
   temperature = 0,
-  model = 'gpt-3.5-turbo' //gpt-4
+  model = 'gpt4' //gpt-4
 ) => {
   const chat = new ChatOpenAI({
     modelName: model,
