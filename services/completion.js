@@ -4,14 +4,14 @@ const { HumanMessage, SystemMessage, AIMessage } = require('langchain/schema');
 const baseURL = process.env.OPENAI_URL;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-const completion = async (messages) => {
+const completion = async (messages, temperature = 0) => {
   const chat = new ChatOpenAI({
     modelName: 'gpt-4', //gpt-4
     openAIApiKey: OPENAI_API_KEY,
     configuration: {
       baseURL: baseURL,
     },
-    temperature: 1,
+    temperature: temperature,
   });
   return await chat.call(messages);
 };
@@ -24,15 +24,15 @@ const recommendEat = async (eatList, historyMessages) => {
       餐馆列表上下文：'''${JSON.stringify(eatList)}'''
       请只推荐符合要求的一家，并用以下 JSON 格式进行输出：
       {
-        name: 餐馆的名字
         reason: 推荐的理由
-        detail: 上下文中餐馆的详细信息
+        name: 餐馆的名字
+        id: 餐馆的 id,
       }
       `
     ),
     ...historyMessages,
   ];
-  const res = await completion(messages);
+  const res = await completion(messages, 0);
   return res;
 };
 
@@ -52,7 +52,7 @@ const getPromptQuestion = async (eatList, historyMessages) => {
     ),
     ...historyMessages,
   ];
-  const res = await completion(messages);
+  const res = await completion(messages, 1);
   console.log('生成的问题：', res.text);
   return res;
 };
