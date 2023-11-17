@@ -6,7 +6,7 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 const completion = async (messages) => {
   const chat = new ChatOpenAI({
-    modelName: 'gpt-3.5-turbo', //gpt-4
+    modelName: 'gpt-4', //gpt-4
     openAIApiKey: OPENAI_API_KEY,
     configuration: {
       baseURL: baseURL,
@@ -60,7 +60,7 @@ const getPromptQuestion = async (eatList, historyMessages) => {
 // 云函数入口函数
 const getRecommendRestaurant = async (eatList = [], history = []) => {
   const restaurantInfo = eatList.map(({ title, address, category }) => {
-    return { title, address, category };
+    return { id, title, category };
   });
   const historyMessages = history.map((msg) => {
     return msg.role === 'AI'
