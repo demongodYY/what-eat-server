@@ -27,7 +27,7 @@ const recommendEat = async (eatList, historyMessages) => {
       餐馆列表上下文会被引用在 ''' 之中。餐馆列表上下文：'''${JSON.stringify(
         eatList
       )}'''
-      请只推荐符合要求的一家，并用以下 JSON 格式进行输出：
+      请只推荐最符合要求的一家，并用以下 JSON 格式进行输出：
       {
         reason: 推荐的理由
         name: 餐馆的名字
@@ -50,8 +50,7 @@ const getPromptQuestion = async (eatList, historyMessages) => {
       餐馆列表上下文会被引用在 ''' 之中。餐馆列表上下文：'''${JSON.stringify(
         eatList
       )}'''
-
-      请每次都问更详细的问题,不要重复类似的问题，问题需要和口味相关，并且非常简洁。不要提供和口味无关的问题。
+      请每次都根据之前的问题不断深入,不要重复类似的问题，问题需要和口味相关，不要提供和口味无关的问题。使用非常简洁一句话的形式提问。
     `
     ),
     ...historyMessages,
