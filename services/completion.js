@@ -59,7 +59,7 @@ const getPromptQuestion = async (eatList, historyMessages) => {
 
 // 云函数入口函数
 const getRecommendRestaurant = async (eatList = [], history = []) => {
-  const restaurantInfo = eatList.map(({ title, address, category }) => {
+  const restaurantInfo = eatList.map(({ title, id, category }) => {
     return { id, title, category };
   });
   const historyMessages = history.map((msg) => {
