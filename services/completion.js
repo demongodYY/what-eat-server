@@ -4,9 +4,13 @@ const { HumanMessage, SystemMessage, AIMessage } = require('langchain/schema');
 const baseURL = process.env.OPENAI_URL;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-const completion = async (messages, temperature = 0) => {
+const completion = async (
+  messages,
+  temperature = 0,
+  model = 'gpt-3.5-turbo' //gpt-4
+) => {
   const chat = new ChatOpenAI({
-    modelName: 'gpt-4', //gpt-4
+    modelName: model,
     openAIApiKey: OPENAI_API_KEY,
     configuration: {
       baseURL: baseURL,
