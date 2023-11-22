@@ -21,11 +21,14 @@ const completion = async (
 };
 
 const recommendEat = async (eatList, historyMessages) => {
+  const restaurantInfo = eatList.map(({ title, category }) => {
+    return { title, category };
+  });
   const messages = [
     new SystemMessage(
       `你是一个美食助手，请根据我提供的餐馆列表上下文，以及对话上下文，来帮助我挑选一家餐馆。
       餐馆列表上下文会被引用在 ''' 之中。餐馆列表上下文：'''${JSON.stringify(
-        eatList
+          restaurantInfo
       )}'''
       请只推荐最符合要求的一家，并用以下 JSON 格式进行输出：
       {
@@ -41,17 +44,33 @@ const recommendEat = async (eatList, historyMessages) => {
   return res;
 };
 
-const getPromptQuestion = async (eatList, historyMessages) => {
-  console.log('enter get prompt question');
+const getSearchKeyword = async (historyMessages) => {
+  console.log("enter get search keyword")
   const messages = [
     new SystemMessage(
-      `你是一个美食助手，你将通过向用户连续提问的方式来引导用户寻找餐馆。
-      请结合餐馆列表上下文和历史提问来提出下一个问题，这个问题将帮助我从餐馆列表中选择出一家我最想去的餐馆。
-      餐馆列表上下文会被引用在 ''' 之中。餐馆列表上下文：'''${JSON.stringify(
-        eatList
-      )}'''
-      请每次都根据之前的问题不断深入,不要重复类似的问题，问题需要和口味相关，不要提供和口味无关的问题。不要暴露列表上下文的存在，使用非常简洁一句话风格，提出有引导性的问题。
-    `
+      `你是一个腾讯地图搜索专家。会根据对话记录上下文，生成用于在腾讯地图上搜索餐馆信息的关键词。
+      注意关键词的格式，包括空格和分隔符。
+      只输出关键词，不要有其他
+      `
+    ),
+    ...historyMessages,
+  ];
+  const res = await completion(messages, 0.3);
+  return res;
+};
+
+const getPromptQuestion = async (historyMessages) => {
+  const messages = [
+    new SystemMessage(
+      `你是一个的美食助手，你将通过向中国的用户连续提问的方式来引导用户寻找餐馆, 这个问题将帮助用户选择出想吃的餐馆类型
+      请每次都根据之前的问题不断深入,不要重复类似的问题，问题需要和口味相关，不要提供和口味无关的问题。
+      请不要带上具体的地区和餐饮派系
+      使用非常简洁一句话风格，尽量在三个问题以内得到用户的喜好
+      请返回最合适的一个问题，并用以下 JSON 格式进行输出：
+      {
+        question: 提问的问题
+      }
+      `
     ),
     ...historyMessages,
   ];
@@ -61,10 +80,7 @@ const getPromptQuestion = async (eatList, historyMessages) => {
 };
 
 // 云函数入口函数
-const getRecommendRestaurant = async (eatList = [], history = []) => {
-  const restaurantInfo = eatList.map(({ title, category }) => {
-    return { title, category };
-  });
+const getRecommendRestaurant = async (history = []) => {
   const historyMessages = history.map((msg) => {
     return msg.role === 'AI'
       ? new AIMessage(msg.content)
@@ -73,11 +89,11 @@ const getRecommendRestaurant = async (eatList = [], history = []) => {
 
   const res =
     history.length % 6 === 0 && history.length > 0
-      ? await recommendEat(restaurantInfo, historyMessages)
-      : await getPromptQuestion(restaurantInfo, historyMessages);
+      ? await getSearchKeyword(historyMessages)
+      : await getPromptQuestion(historyMessages);
   return res.text;
 };
 
 module.exports = {
-  getRecommendRestaurant,
+  getRecommendRestaurant, recommendEat
 };

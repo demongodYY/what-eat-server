@@ -1,5 +1,5 @@
-const { getRecommendRestaurant } = require('./completion');
+const { getRecommendRestaurant, recommendEat } = require('./completion');
 
 module.exports = {
-  getRecommendRestaurant,
+  getRecommendRestaurant, recommendEat
 };

@@ -1,4 +1,4 @@
-const { getRecommendRestaurant } = require('./services');
+const { getRecommendRestaurant, recommendEat } = require('./services');
 
 const express = require('express');
 const cors = require('cors');
@@ -21,9 +21,18 @@ app.get('/api/wx_openid', async (req, res) => {
   }
 });
 
-app.post('/api/recommend', async (req, res) => {
+app.post('/api/recommend/questions', async (req, res) => {
+  const { history = [] } = req.body;
+  const result = await getRecommendRestaurant(history);
+  res.send({
+    code: 0,
+    data: result,
+  });
+});
+
+app.post('/api/recommend/restaurants', async (req, res) => {
   const { eatList = [], history = [] } = req.body;
-  const result = await getRecommendRestaurant(eatList, history);
+  const result = await recommendEat(eatList, history);
   res.send({
     code: 0,
     data: result,
