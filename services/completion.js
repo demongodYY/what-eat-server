@@ -41,7 +41,7 @@ const recommendEat = async (eatList, historyMessages) => {
     ...historyMessages,
   ];
   const res = await completion(messages, 0);
-  return res;
+  return res.content;
 };
 
 const getSearchKeyword = async (historyMessages) => {
@@ -56,7 +56,8 @@ const getSearchKeyword = async (historyMessages) => {
     ...historyMessages,
   ];
   const res = await completion(messages, 0.3);
-  return res;
+  console.log("return res:", res);
+  return {"keyword": res.content};
 };
 
 const getPromptQuestion = async (historyMessages) => {
@@ -70,13 +71,13 @@ const getPromptQuestion = async (historyMessages) => {
       {
         question: 提问的问题
       }
+      请注意json的格式一定要正确
       `
     ),
     ...historyMessages,
   ];
   const res = await completion(messages, 1);
-  console.log('生成的问题：', res.text);
-  return res;
+  return res.content;
 };
 
 // 云函数入口函数
@@ -91,7 +92,7 @@ const getRecommendRestaurant = async (history = []) => {
     history.length % 6 === 0 && history.length > 0
       ? await getSearchKeyword(historyMessages)
       : await getPromptQuestion(historyMessages);
-  return res.text;
+  return res;
 };
 
 module.exports = {
