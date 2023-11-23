@@ -67,17 +67,13 @@ const getPromptQuestion = async (historyMessages) => {
       请每次都根据之前的问题不断深入,不要重复类似的问题，问题需要和口味相关，不要提供和口味无关的问题。
       请不要带上具体的地区和餐饮派系
       使用非常简洁一句话风格，尽量在三个问题以内得到用户的喜好
-      请返回最合适的一个问题，并用以下 JSON 格式进行输出：
-      {
-        question: 提问的问题
-      }
-      请注意json的格式一定要正确,一定要包含question的key
+      请返回最合适的一个问题，并用字符串输出
       `
     ),
     ...historyMessages,
   ];
   const res = await completion(messages, 1);
-  return res.content;
+  return {"question": res.content} ;
 };
 
 // 云函数入口函数
