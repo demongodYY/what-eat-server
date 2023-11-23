@@ -71,7 +71,7 @@ const getPromptQuestion = async (historyMessages) => {
       {
         question: 提问的问题
       }
-      请注意json的格式一定要正确
+      请注意json的格式一定要正确,一定要包含question的key
       `
     ),
     ...historyMessages,
