@@ -55,7 +55,7 @@ const getSearchKeyword = async (historyMessages) => {
     ),
     ...historyMessages,
   ];
-  const res = await completion(messages, 0.3);
+  const res = await completion(messages, 0.8);
   console.log("return res:", res);
   return {"keyword": res.content};
 };
@@ -64,7 +64,9 @@ const getPromptQuestion = async (historyMessages) => {
   const messages = [
     new SystemMessage(
       `你是一个的美食助手，你将通过向中国的用户连续提问的方式来引导用户寻找餐馆, 这个问题将帮助用户选择出想吃的餐馆类型
-      请每次都根据之前的问题不断深入,不要重复类似的问题，问题需要和口味相关，不要提供和口味无关的问题。
+      目前是早上的用餐时间，用餐位置在成都软件园
+      请每次都根据之前的问题不断深入,不要重复类似的问题，只提出和当前这一顿口味偏好相关的问题
+      问题需要符合我的用餐实际问题和地点，问题需要有引导型不要概括
       请不要带上具体的地区和餐饮派系
       使用非常简洁一句话风格，尽量在三个问题以内得到用户的喜好
       请返回最合适的一个问题，并用以下正确的JSON格式进行输出：
@@ -88,7 +90,7 @@ const getRecommendRestaurant = async (history = []) => {
   });
 
   const res =
-    history.length % 6 === 0 && history.length > 0
+    history.length % 8 === 0 && history.length > 0
       ? await getSearchKeyword(historyMessages)
       : await getPromptQuestion(historyMessages);
   return res;
