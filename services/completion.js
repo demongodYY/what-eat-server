@@ -1,13 +1,28 @@
 const { ChatOpenAI } = require('langchain/chat_models/openai');
 const { HumanMessage, SystemMessage, AIMessage } = require('langchain/schema');
+const { JsonOutputFunctionsParser } = require("langchain/output_parsers");
 
 const baseURL = process.env.OPENAI_URL;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-
+const jsonParser = new JsonOutputFunctionsParser();
+const jsonExtractionSchema = {
+  name: "jsonExtractor",
+  description: "Extracts json result from the output.",
+  parameters: {
+    type: "object",
+    properties: {
+      result: {
+        type: "string",
+        description: "The output result",
+      }
+    },
+    required: ["result"],
+  },
+};
 const completion = async (
   messages,
   temperature = 0,
-  model = 'gpt-4' //gpt-4, gpt-3.5-turbo
+  model = 'gpt-3.5-turbo' //gpt-4, gpt-3.5-turbo
 ) => {
   const chat = new ChatOpenAI({
     modelName: model,
@@ -17,7 +32,14 @@ const completion = async (
     },
     temperature: temperature,
   });
-  return await chat.call(messages);
+  return await chat
+    .bind(
+      {
+        functions: [jsonExtractionSchema],
+        function_call: { "name": "jsonExtractor" }
+      })
+    .pipe(jsonParser)
+    .invoke(messages);
 };
 
 const recommendEat = async (eatList, historyMessages) => {
@@ -28,7 +50,7 @@ const recommendEat = async (eatList, historyMessages) => {
     new SystemMessage(
       `你是一个美食助手，请根据我提供的餐馆列表上下文，以及对话上下文，来帮助我挑选一家餐馆。
       餐馆列表上下文会被引用在 ''' 之中。餐馆列表上下文：'''${JSON.stringify(
-          restaurantInfo
+        restaurantInfo
       )}'''
       请只推荐最符合要求的一家，并用以下 JSON 格式进行输出：
       {
@@ -49,15 +71,14 @@ const getSearchKeyword = async (historyMessages) => {
   const messages = [
     new SystemMessage(
       `你是一个腾讯地图搜索专家。会根据对话记录上下文，生成用于在腾讯地图上搜索餐馆信息的关键词。
-      注意关键词的格式，包括空格和分隔符。
+      以字符串的方式返回, 注意关键词的格式，包括空格和分隔符。
       只输出关键词，不要有其他
       `
     ),
     ...historyMessages,
   ];
   const res = await completion(messages, 0.8);
-  console.log("return res:", res);
-  return {"keyword": res.content};
+  return { keyword: res.result };
 };
 
 const getPromptQuestion = async (historyMessages) => {
@@ -69,16 +90,13 @@ const getPromptQuestion = async (historyMessages) => {
       问题需要符合我的用餐实际问题和地点，问题需要有引导型不要概括
       请不要带上具体的地区和餐饮派系
       使用非常简洁一句话风格，尽量在三个问题以内得到用户的喜好
-      请返回最合适的一个问题，并用以下正确的JSON格式进行输出：
-      {
-        question: 提问的问题
-      }
+      请返回最合适的一个问题,以字符串的方式返回
       `
     ),
     ...historyMessages,
   ];
   const res = await completion(messages, 0.8);
-  return res.content;
+  return { question: res.result };
 };
 
 // 云函数入口函数
