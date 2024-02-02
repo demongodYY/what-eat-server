@@ -1,30 +1,17 @@
 const { ChatOpenAI } = require('langchain/chat_models/openai');
+const { ChatPromptTemplate } = require('langchain/prompts');
 const { HumanMessage, SystemMessage, AIMessage } = require('langchain/schema');
-const { JsonOutputFunctionsParser } = require("langchain/output_parsers");
+const { StructuredOutputParser } = require('langchain/output_parsers');
+const { LLMChain } = require('langchain/chains');
 
 const baseURL = process.env.OPENAI_URL;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const jsonParser = new JsonOutputFunctionsParser();
-const jsonExtractionSchema = {
-  name: "jsonExtractor",
-  description: "Extracts json result from the output.",
-  parameters: {
-    type: "object",
-    properties: {
-      result: {
-        type: "string",
-        description: "The output result",
-      }
-    },
-    required: ["result"],
-  },
-};
-const completion = async (
-  messages,
+
+const chatModel = (
   temperature = 0,
   model = 'gpt-3.5-turbo' //gpt-4, gpt-3.5-turbo
 ) => {
-  const chat = new ChatOpenAI({
+  return new ChatOpenAI({
     modelName: model,
     openAIApiKey: OPENAI_API_KEY,
     configuration: {
@@ -32,71 +19,97 @@ const completion = async (
     },
     temperature: temperature,
   });
-  return await chat
-    .bind(
-      {
-        functions: [jsonExtractionSchema],
-        function_call: { "name": "jsonExtractor" }
-      })
-    .pipe(jsonParser)
-    .invoke(messages);
+};
+
+const completion = async (
+  messages,
+  temperature = 0,
+  model = 'gpt-4' //gpt-4, gpt-3.5-turbo
+) => {
+  const chat = chatModel(temperature, model);
+  return await chat.call(messages);
 };
 
 const recommendEat = async (eatList, historyMessages) => {
   const restaurantInfo = eatList.map(({ title, category }) => {
     return { title, category };
   });
+
+  const parser = StructuredOutputParser.fromNamesAndDescriptions({
+    reason: '推荐这家餐馆的理由，如果没找到的话， 填入 null',
+    title: '在餐馆列表中这家餐馆的名字，如果没找到的话，填入 null',
+  });
+
   const messages = [
     new SystemMessage(
       `你是一个美食助手，请根据我提供的餐馆列表上下文，以及对话上下文，来帮助我挑选一家餐馆。
-      餐馆列表上下文会被引用在 ''' 之中。餐馆列表上下文：'''${JSON.stringify(
-        restaurantInfo
-      )}'''
-      请只推荐最符合要求的一家，并用以下 JSON 格式进行输出：
-      {
-        reason: 推荐的理由
-        name: 餐馆的名字
-      }
-      注意，只输出 JSON 格式，不要包含其他信息。
+      餐馆列表上下文会被引用在 ''' 之中。餐馆列表上下文：'''{restaurantList}'''
+      请只推荐最符合要求的一家。
+      `
+    ),
+    ...historyMessages,
+  ];
+
+  const chatPrompt = ChatPromptTemplate.fromMessages(messages);
+
+  const chain = new LLMChain({
+    prompt: chatPrompt,
+    llm: chatModel(0, 'gpt-4'),
+    outputParser: parser,
+    verbose: true,
+  });
+
+  const res = await chain.invoke({
+    restaurantList: JSON.stringify(restaurantInfo),
+  });
+  return res;
+};
+
+const getSearchKeyword = async (
+  historyMessages,
+  period = '午餐',
+  location = '中国'
+) => {
+  console.log('enter get search keyword');
+  const messages = [
+    new SystemMessage(
+      `你是一个腾讯地图搜索专家。会根据对话记录上下文，生成用于在腾讯地图上搜索餐馆信息的关键词。目前是${period}的用餐时间,用餐位置在${location}。
+      注意关键词的格式，包括空格和分隔符。只输出关键词，不要有其他。注意这是地图搜索的关键词，需要是明确的地点类型。
+      例子：'''
+        用户偏好：麻辣
+        关键词：川菜馆 麻辣烫 火锅 ...（可以更多）
+      '''
+
+      关键词：
       `
     ),
     ...historyMessages,
   ];
   const res = await completion(messages, 0);
-  return res.content;
+  console.log('return res:', res);
+  return { keyword: res.content };
 };
 
-const getSearchKeyword = async (historyMessages) => {
-  console.log("enter get search keyword")
+const getPromptQuestion = async (
+  historyMessages,
+  period = '午餐',
+  location = '中国'
+) => {
   const messages = [
     new SystemMessage(
-      `你是一个腾讯地图搜索专家。会根据对话记录上下文，生成用于在腾讯地图上搜索餐馆信息的关键词。
-      以字符串的方式返回, 注意关键词的格式，包括空格和分隔符。
-      只输出关键词，不要有其他
+      `你是一个的美食助手，你将通过连续提问的方式来引导用户寻找餐馆，这个问题将帮助用户选择出想吃的餐馆类型。目前是${period}的用餐时间，用餐位置在${location}。
+      请每次都根据之前的问题不断深入，不要重复类似的问题，只提出和当前这一顿口味偏好相关的问题。问题需要符合我的用餐时间和地点。问题需要有引导性，不要过于概括。
+      
+      例子：你喜欢吃比较辣的餐馆，例如麻辣烫吗？
+
+      每轮对话只提一个问题，使用非常简洁一句话风格。
+      提问：
       `
     ),
     ...historyMessages,
   ];
-  const res = await completion(messages, 0.8);
-  return { keyword: res.result };
-};
-
-const getPromptQuestion = async (historyMessages) => {
-  const messages = [
-    new SystemMessage(
-      `你是一个的美食助手，你将通过向中国的用户连续提问的方式来引导用户寻找餐馆, 这个问题将帮助用户选择出想吃的餐馆类型
-      目前是早上的用餐时间，用餐位置在成都软件园
-      请每次都根据之前的问题不断深入,不要重复类似的问题，只提出和当前这一顿口味偏好相关的问题
-      问题需要符合我的用餐实际问题和地点，问题需要有引导型不要概括
-      请不要带上具体的地区和餐饮派系
-      使用非常简洁一句话风格，尽量在三个问题以内得到用户的喜好
-      请返回最合适的一个问题,以字符串的方式返回
-      `
-    ),
-    ...historyMessages,
-  ];
-  const res = await completion(messages, 0.8);
-  return { question: res.result };
+  const res = await completion(messages, 1);
+  return { question: res.content };
 };
 
 // 云函数入口函数
@@ -115,5 +128,6 @@ const getRecommendRestaurant = async (history = []) => {
 };
 
 module.exports = {
-  getRecommendRestaurant, recommendEat
+  getRecommendRestaurant,
+  recommendEat,
 };
