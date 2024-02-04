@@ -101,36 +101,39 @@ const getSearchKeyword = async (
   console.log('enter get search keyword', period, location);
   const messages = [
     new SystemMessage(
-      `你是一个腾讯地图搜索专家。会根据对话记录上下文，生成用于在腾讯地图上搜索餐馆信息的3个关键词。目前是${period}的用餐时间,用餐位置在${location}。
+      `你是一个腾讯地图搜索专家。会根据对话记录上下文，生成用于在腾讯地图上搜索餐馆信息的1个关键词。目前是${period}的用餐时间,用餐位置在${location}。
       关键词要求:
       ---
-      1. 注意关键词的格式，包括空格和分隔符。
+      1. 注意关键词的格式。
       2. 只输出关键词，不要有其他。
       3. 注意这是地图搜索的关键词，需要是明确的地点类型。
-      4. 关键词要符合用户的偏好喝目前的用餐时间
+      4. 关键词要符合用户的偏好以及目前的用餐时间和位置
       ---
-      例子：
+      关键词例子：
       ---
-        用户偏好：麻辣，赶时间
-        用餐时间：午餐
-        关键词：快餐 麻辣烫 冒菜
+        用户偏好:麻辣，赶时间，工作餐
+        用餐时间:午餐
+        关键词:冒菜
 
-        用户偏好：麻辣
-        用餐时间：晚餐
-        关键词：川菜馆 火锅 烧烤
+        用户偏好:麻辣，火锅，多人一起
+        用餐时间:晚餐
+        关键词:重庆火锅
       ---
 
-      你必须按照以下'''中的格式输出：
-      '''关键词1 关键词2 关键词3'''
-
-      关键词: 
+      开始，按照以下格式进行输出:
+      -----
+      用户偏好:用户偏好的描述
+      用餐时间:目前的用餐时间
+      关键词:一个搜索关键词
+      -----
       `
     ),
     ...historyMessages,
   ];
   const res = await completion(messages, 0);
   console.log('return keyword res:', res.content);
-  return { keyword: res.content };
+  const result = res.content.split('关键词:')[1].trim();
+  return { keyword: result };
 };
 
 const getPromptQuestion = async (
