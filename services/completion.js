@@ -100,8 +100,10 @@ const getSearchKeyword = async (
 ) => {
   console.log('enter get search keyword', period, location);
   const messages = [
+    ...historyMessages,
     new SystemMessage(
-      `你是一个腾讯地图搜索专家。会根据对话记录上下文，生成用于在腾讯地图上搜索餐馆信息的1个关键词。目前是${period}的用餐时间,用餐位置在${location}。
+      `你是一个腾讯地图搜索专家。会根据之前对话记录的上下文，生成用于在腾讯地图上搜索餐馆信息的一个关键词。目前是${period}的用餐时间,用餐位置在${location}。
+
       关键词要求:
       ---
       1. 注意关键词的格式。
@@ -109,6 +111,7 @@ const getSearchKeyword = async (
       3. 注意这是地图搜索的关键词，需要是明确的地点类型。
       4. 关键词要符合用户的偏好以及目前的用餐时间和位置
       ---
+      
       关键词例子：
       ---
         用户偏好:麻辣，赶时间，工作餐
@@ -120,15 +123,16 @@ const getSearchKeyword = async (
         关键词:重庆火锅
       ---
 
-      开始，按照以下格式进行输出:
+      你必须按照以下-----之间的格式进行输出:
       -----
       用户偏好:用户偏好的描述
       用餐时间:目前的用餐时间
       关键词:一个搜索关键词
       -----
+
+      用户偏好:
       `
     ),
-    ...historyMessages,
   ];
   const res = await completion(messages, 0);
   console.log('return keyword res:', res.content);
