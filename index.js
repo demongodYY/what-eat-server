@@ -22,8 +22,8 @@ app.get('/api/wx_openid', async (req, res) => {
 });
 
 app.post('/api/recommend/questions', async (req, res) => {
-  const { history = [] } = req.body;
-  const result = await getRecommendRestaurant(history);
+  const { history = [], period, location } = req.body;
+  const result = await getRecommendRestaurant(history, period, location);
   res.send({
     code: 0,
     data: result,

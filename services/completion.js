@@ -70,15 +70,23 @@ const getSearchKeyword = async (
   period = '午餐',
   location = '中国'
 ) => {
-  console.log('enter get search keyword');
+  console.log('enter get search keyword', period, location);
   const messages = [
     new SystemMessage(
       `你是一个腾讯地图搜索专家。会根据对话记录上下文，生成用于在腾讯地图上搜索餐馆信息的关键词。目前是${period}的用餐时间,用餐位置在${location}。
-      注意关键词的格式，包括空格和分隔符。只输出关键词，不要有其他。注意这是地图搜索的关键词，需要是明确的地点类型。
-      例子：'''
-        用户偏好：麻辣
-        关键词：川菜馆 麻辣烫 火锅 ...（可以更多）
-      '''
+      关键词要求:
+      ---
+      1. 注意关键词的格式，包括空格和分隔符。
+      2. 只输出关键词，不要有其他。
+      3. 注意这是地图搜索的关键词，需要是明确的地点类型。
+      4. 关键词要符合用户的偏好喝目前的用餐时间
+      ---
+      例子：
+      ---
+        用户偏好：麻辣，赶时间
+        用餐时间：午餐
+        关键词：川菜馆 麻辣烫 快餐...（可以更多）
+      ---
 
       关键词：
       `
@@ -95,14 +103,27 @@ const getPromptQuestion = async (
   period = '午餐',
   location = '中国'
 ) => {
+  console.log('clarify question for user ', period, location);
   const messages = [
     new SystemMessage(
       `你是一个的美食助手，你将通过连续提问的方式来引导用户寻找餐馆，这个问题将帮助用户选择出想吃的餐馆类型。目前是${period}的用餐时间，用餐位置在${location}。
-      请每次都根据之前的问题不断深入，不要重复类似的问题，只提出和当前这一顿口味偏好相关的问题。问题需要符合我的用餐时间和地点。问题需要有引导性，不要过于概括。
+      问题要求: 
+      ---
+      1. 每次都根据之前的问答不断深入，不要重复类似的问题。
+      2. 只提出用餐相关的问题，包括口味偏好，用餐类型（e.g. 工作餐，随便吃吃，正餐等等）。
+      3. 问题需要符合我的用餐时间和地点。
+      4. 问题需要有渐进引导性，不要过于概括。
+      ---
       
-      例子：你喜欢吃比较辣的餐馆，例如麻辣烫吗？
+      问题例子：
+      ---
+      1. 你喜欢吃比较辣的餐馆，例如麻辣烫吗？
+      2. 你顿饭需要赶时间还是可以慢慢吃？
+      3. 米饭或是面条，米线这些你倾向于什么呢？
+      ---
 
-      每轮对话只提一个问题，使用非常简洁一句话风格。
+      注意：每轮对话只提一个问题，使用非常简洁一句话风格。
+
       提问：
       `
     ),
@@ -113,7 +134,7 @@ const getPromptQuestion = async (
 };
 
 // 云函数入口函数
-const getRecommendRestaurant = async (history = []) => {
+const getRecommendRestaurant = async (history = [], period, location) => {
   const historyMessages = history.map((msg) => {
     return msg.role === 'AI'
       ? new AIMessage(msg.content)
@@ -121,9 +142,9 @@ const getRecommendRestaurant = async (history = []) => {
   });
 
   const res =
-    history.length % 8 === 0 && history.length > 0
-      ? await getSearchKeyword(historyMessages)
-      : await getPromptQuestion(historyMessages);
+    history.length % 6 === 0 && history.length > 0
+      ? await getSearchKeyword(historyMessages, period, location)
+      : await getPromptQuestion(historyMessages, period, location);
   return res;
 };
 
