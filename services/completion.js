@@ -35,7 +35,12 @@ const completion = async (
   return await chat.call(messages);
 };
 
-const recommendEat = async (eatList, history, period, location) => {
+const recommendEat = async (
+  eatList,
+  history,
+  period = '午餐',
+  location = '中国'
+) => {
   const restaurantInfo = eatList.map(({ title, category, id }) => {
     return { title, category, id };
   });

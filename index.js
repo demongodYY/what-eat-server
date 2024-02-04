@@ -31,8 +31,8 @@ app.post('/api/recommend/questions', async (req, res) => {
 });
 
 app.post('/api/recommend/restaurants', async (req, res) => {
-  const { eatList = [], history = [] } = req.body;
-  const result = await recommendEat(eatList, history);
+  const { eatList = [], history = [], period, location } = req.body;
+  const result = await recommendEat(eatList, history, period, location);
   res.send({
     code: 0,
     data: result,
