@@ -1,6 +1,11 @@
 const { ChatOpenAI } = require('langchain/chat_models/openai');
-const { ChatPromptTemplate } = require('langchain/prompts');
+const {
+  ChatPromptTemplate,
+  SystemMessagePromptTemplate,
+  PromptTemplate,
+} = require('langchain/prompts');
 const { HumanMessage, SystemMessage, AIMessage } = require('langchain/schema');
+
 const { StructuredOutputParser } = require('langchain/output_parsers');
 const { LLMChain } = require('langchain/chains');
 
@@ -30,27 +35,43 @@ const completion = async (
   return await chat.call(messages);
 };
 
-const recommendEat = async (eatList, historyMessages) => {
-  const restaurantInfo = eatList.map(({ title, category }) => {
-    return { title, category };
+const recommendEat = async (eatList, history, period, location) => {
+  const restaurantInfo = eatList.map(({ title, category, id }) => {
+    return { title, category, id };
+  });
+
+  const historyMessages = history.map((msg) => {
+    return msg.role === 'AI'
+      ? new AIMessage(msg.content)
+      : new HumanMessage(msg.content);
   });
 
   const parser = StructuredOutputParser.fromNamesAndDescriptions({
-    reason: '推荐这家餐馆的理由，如果没找到的话， 填入 null',
+    reason: '推荐这家餐馆的理由，如果没找到的话，填入 null',
     title: '在餐馆列表中这家餐馆的名字，如果没找到的话，填入 null',
+    id: '在餐馆列表中这家餐馆的 id，如果没找到的话，填入 null',
   });
 
-  const messages = [
-    new SystemMessage(
-      `你是一个美食助手，请根据我提供的餐馆列表上下文，以及对话上下文，来帮助我挑选一家餐馆。
-      餐馆列表上下文会被引用在 ''' 之中。餐馆列表上下文：'''{restaurantList}'''
-      请只推荐最符合要求的一家。
-      `
-    ),
-    ...historyMessages,
-  ];
+  const systemPromptTemplate = new PromptTemplate({
+    template: `你是一个美食助手，请根据我提供的候选餐馆列表，以及之前的对话历史记录，来帮助我挑选一家餐馆。目前是${period}的用餐时间,用餐位置在${location}。
+    候选餐馆列表会被引用在 ''' 之中。
+    候选餐馆列表：'''{restaurantInfo}'''
+    只推荐最符合要求的一家。挑选的餐馆请符合用餐时间和位置。
 
-  const chatPrompt = ChatPromptTemplate.fromMessages(messages);
+    {format_instructions}
+    `,
+    inputVariables: ['restaurantInfo', 'format_instructions'],
+  });
+
+  const systemPrompt = new SystemMessagePromptTemplate({
+    prompt: systemPromptTemplate,
+  });
+
+  const chatPrompt = ChatPromptTemplate.fromMessages([
+    ...historyMessages,
+    systemPrompt,
+  ]);
+  console.log(123, chatPrompt);
 
   const chain = new LLMChain({
     prompt: chatPrompt,
@@ -60,9 +81,11 @@ const recommendEat = async (eatList, historyMessages) => {
   });
 
   const res = await chain.invoke({
-    restaurantList: JSON.stringify(restaurantInfo),
+    restaurantInfo: JSON.stringify(restaurantInfo),
+    format_instructions: parser.getFormatInstructions(),
   });
-  return res;
+  console.log('return recommend eat', res?.text);
+  return { recommendEat: res.text };
 };
 
 const getSearchKeyword = async (
@@ -98,7 +121,7 @@ const getSearchKeyword = async (
     ...historyMessages,
   ];
   const res = await completion(messages, 0);
-  console.log('return res:', res);
+  console.log('return keyword res:', res.content);
   return { keyword: res.content };
 };
 
@@ -134,6 +157,7 @@ const getPromptQuestion = async (
     ...historyMessages,
   ];
   const res = await completion(messages, 1);
+  console.log('return question', res.content);
   return { question: res.content };
 };
 
