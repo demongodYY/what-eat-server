@@ -166,7 +166,7 @@ const getPromptQuestion = async (
 
       注意：每轮对话只提一个问题，使用非常简洁一句话风格。
 
-      提问：
+      助手的问题: 
       `
     ),
     ...historyMessages,
