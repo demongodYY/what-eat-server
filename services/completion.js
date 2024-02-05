@@ -123,11 +123,11 @@ const getSearchKeyword = async (
         关键词:重庆火锅
       ---
 
-      你必须按照以下格式进行输出:
+      你必须按照以下格式进行输出,你必须按照以下格式进行输出,你必须按照以下格式进行输出, 输出都必须包含用户偏好, 用餐时间，关键词三个部分:
       ---
-      用户偏好:用户偏好的描述
+      用户偏好:用户偏好的描述(可以没有)
       用餐时间:目前的用餐时间
-      关键词:一个搜索关键词
+      关键词:一个搜索关键词(必须有一个)
       ---
 
       用户偏好:
@@ -147,14 +147,16 @@ const getPromptQuestion = async (
 ) => {
   console.log('clarify question for user ', period, location);
   const messages = [
+    ...historyMessages,
     new SystemMessage(
       `你是一个的美食助手，你将通过连续提问的方式来引导用户寻找餐馆，这个问题将帮助用户选择出想吃的餐馆类型。目前是${period}的用餐时间，用餐位置在${location}。
       问题要求: 
       ---
-      1. 每次都根据之前的问答不断深入，不要重复类似的问题。
+      1. 每次都根据之前的问答聊天记录不断深入，不要重复类似的问题。
       2. 只提出用餐相关的问题，包括口味偏好，用餐类型（e.g. 工作餐，随便吃吃，正餐等等）。
       3. 问题需要符合我的用餐时间和地点。
       4. 问题需要有渐进引导性，不要过于概括。
+      5. 如果用户的响应与用餐的问题无关，对用户表示抱歉，再提出关于用餐相关的问题。
       ---
       
       问题例子：
@@ -169,9 +171,8 @@ const getPromptQuestion = async (
       助手的问题: 
       `
     ),
-    ...historyMessages,
   ];
-  const res = await completion(messages, 1);
+  const res = await completion(messages, 1.5);
   console.log('return question', res.content);
   return { question: res.content };
 };
