@@ -180,8 +180,8 @@ const getPromptQuestion = async (
 const getRecommendRestaurant = async (history = [], period, location) => {
   const historyMessages = history.map((msg) => {
     return msg.role === 'AI'
-      ? new AIMessage(msg.content)
-      : new HumanMessage(msg.content);
+      ? new AIMessage(`助手的问题: '''${msg.content}'''`)
+      : new HumanMessage(`用户的描述: '''${msg.content}'''`);
   });
 
   const res =
