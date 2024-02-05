@@ -29,7 +29,7 @@ const chatModel = (
 const completion = async (
   messages,
   temperature = 0,
-  model = 'gpt-4' //gpt-4, gpt-3.5-turbo
+  model = 'gpt-4-1106-preview' //gpt-4, gpt-3.5-turbo
 ) => {
   const chat = chatModel(temperature, model);
   return await chat.call(messages);
@@ -80,7 +80,7 @@ const recommendEat = async (
 
   const chain = new LLMChain({
     prompt: chatPrompt,
-    llm: chatModel(0, 'gpt-4'),
+    llm: chatModel(0, 'gpt-4-1106-preview'),
     outputParser: parser,
     verbose: true,
   });
@@ -123,12 +123,12 @@ const getSearchKeyword = async (
         关键词:重庆火锅
       ---
 
-      你必须按照以下-----之间的格式进行输出:
-      -----
+      你必须按照以下格式进行输出:
+      ---
       用户偏好:用户偏好的描述
       用餐时间:目前的用餐时间
       关键词:一个搜索关键词
-      -----
+      ---
 
       用户偏好:
       `
